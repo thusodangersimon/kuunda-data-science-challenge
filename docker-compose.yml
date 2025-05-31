@@ -1,0 +1,18 @@
+services:
+  eda:
+    container_name: jupyter-container
+    build: ./
+    user: root
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+    tty: true
+    working_dir: /app
+    ports:
+      - "8890:8890"
+    command: jupyter lab
+      --ip=0.0.0.0
+      --allow-root
+      --NotebookApp.token=''
+      --port=8890
