@@ -3,6 +3,8 @@ services:
     container_name: jupyter-container
     build: ./
     user: root
+    environment:
+      - PYTHONPATH=/app/app
     env_file:
       - .env
     volumes:
@@ -16,3 +18,28 @@ services:
       --allow-root
       --NotebookApp.token=''
       --port=8890
+  lint:
+    container_name: lint-container
+    build: ./
+    user: root
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+    tty: true
+    working_dir: /app
+    command: poetry run ruff check . && poetry run pylint your_module_or_script.py
+  inference:
+    container_name: inference-container
+    build: ./
+    user: root
+    environment:
+      - PYTHONPATH=/app/app
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    command: uvicorn main:app --reload
