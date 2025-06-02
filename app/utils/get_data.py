@@ -1,18 +1,31 @@
 import os
-import boto3
+from pathlib import Path
 
-def download_from_s3(bucket_name: str, s3_key: str, local_path: str):
+import boto3
+import pandas as pd
+
+# Get data from envrion varibles set when container is spun up
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+
+
+def get_all_data(bucket_name, outpath: str):
     s3 = boto3.client(
         "s3",
-        aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
     )
-    s3.download_file(bucket_name, s3_key, local_path)
-    print(f"Downloaded {s3_key} from {bucket_name} to {local_path}")
+    paginator = s3.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket_name, Prefix=""):
+        for obj in page.get("Contents", []):
+            s3.download_file(bucket_name, obj["Key"], Path(outpath).joinpath(obj["Key"]))
 
-if __name__ == "__main__":
-    # Example usage
-    bucket = "kuunda-datascience-challenge"
-    key = "path/in/s3/yourfile.csv"
-    dest = "yourfile.csv"
-    download_from_s3(bucket, key, dest)
+
+def load_training_data(filepath: str) -> pd.DataFrame:
+    # concat into dataframe
+    df = [pd.read_csv(p) for p in Path(filepath).iterdir() if p.is_file()]
+    # append all files
+    df = pd.concat(df)
+    # make date datetimes
+    df['date_add'] = pd.to_datetime(df['date_add'])
+    return df

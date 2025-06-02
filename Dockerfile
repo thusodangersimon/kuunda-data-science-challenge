@@ -26,7 +26,7 @@ WORKDIR /app
 RUN pip install --upgrade pip poetry==2.1.2
 
 COPY pyproject.toml ./
-COPY poetry.lock ./
+#COPY poetry.lock ./
 
 RUN poetry config virtualenvs.create false && \
   poetry install --no-interaction --no-root
